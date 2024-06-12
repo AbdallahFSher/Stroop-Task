@@ -1,0 +1,9 @@
+v1.05 (June 12, 2024)
+    - Added fullscreen
+    - Centered word
+    - Added popup window for easy subject data input
+    - Changed font from 48 to 72
+    Known Bugs:
+        - Occasionally, the screen will stay black even though a word is selected, and a new word doesn't appear until about 2.5 seconds afterwards
+            (total length of stimulus + inter-stimulus interval). This could be a rendering issue due to messy code; Need to fix in the next couple
+            of days.
