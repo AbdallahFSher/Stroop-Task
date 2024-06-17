@@ -1,12 +1,16 @@
 # Emotional Stroop Test for Migraineurs
 # Author: Abdallah Sher
-# Last Updated: June 12, 2024
-# Version 1.05
+# Last Updated: June 17, 2024
+# Version 1.1
 # Sources:
 # 1.) https://www.scenegrammarlab.com/databases/bawl-r-database/
 # 2.) https://doi.org/10.1186/1471-2377-11-141
 
-import pygame
+from psychopy import core, visual, event
+from psychopy.hardware import keyboard
+import numpy as np
+from pylsl import StreamInfo, StreamOutlet
+import screeninfo
 import pandas as pd
 import random
 import time
@@ -16,6 +20,11 @@ from tkinter import ttk
 
 running = False
 migraineBool = False
+kb = keyboard.Keyboard()
+
+# Create a LSL stream for the trigger words
+triggerInfo = StreamInfo(name='TriggerStream', type='Markers', channel_count=1, source_id='Emotional_Stroop_Marker_Stream')
+triggerOutlet = StreamOutlet(triggerInfo)
 
 # Function to bring the window to the front
 def windowsEnumerationHandler(hwnd, top_windows):
@@ -114,43 +123,13 @@ if(running):
     triggerWords = [word.strip() for word in triggerWords]
     triggerWords = [word.upper() for word in triggerWords]
     # 2.) Create a pygame window for the task
-    pygame.init()
-    screen = pygame.display.set_mode((0,0), pygame.FULLSCREEN)
-    pygame.display.set_caption("Emotional Stroop Test")
-    clock = pygame.time.Clock()
-    font = pygame.font.Font(pygame.font.get_default_font(), size=72)
-    SCREEN_WIDTH = screen.get_width()
-    SCREEN_HEIGHT = screen.get_height()
+    SCREEN_WIDTH = screeninfo.get_monitors()[0].width
+    SCREEN_HEIGHT = screeninfo.get_monitors()[0].height
+    window = visual.Window(size=(SCREEN_WIDTH, SCREEN_HEIGHT), fullscr=True, allowGUI=False, allowStencil=False, monitor='display1', color=[-1,-1,-1], colorSpace='rgb', blendMode='avg', useFBO=False, waitBlanking = True, units="pix")
     bringToFront("Emotional Stroop Test")
 
 # Main Loop
 while running:
-    # Event handling
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
-            running = False
-        if event.type == pygame.KEYDOWN:
-            end = time.time()
-            # Check the selected color
-            if(event.key == pygame.K_j):
-                selectedColor = "red"
-            elif(event.key == pygame.K_k):
-                selectedColor = "blue"
-            elif(event.key == pygame.K_l):
-                selectedColor = "green"
-            else:
-                selectedColor = "NA"
-
-            # Check if the selected color is correct    
-            if(selectedColor == color):
-                correct = True
-            else:
-                correct = False
-            output.write(f"{word}, {color}, {selectedColor}, {end - start}, {correct}, {trigger}\n")
-            newWord = True
-            screen.fill("black")
-            pygame.display.flip()       
-
     if(newWord):
         time.sleep(0.5)
         wordType = random.randint(0, 2)
@@ -179,18 +158,52 @@ while running:
 
     if(count == 108):
         running = False
+        break
 
-    text = pygame.font.Font.render(font, word, True, color)
-    textRect = text.get_rect(center=screen.get_rect().center)
-    screen.blit(text, textRect)
+    text = visual.TextStim(window, text=word, color=color, height=100)
+    text.draw()
+    window.flip()
+
+    keys = event.getKeys()
+    
+    #if keys is not empty
+    if keys:
+        # Event handling
+        if 'escape' in keys:
+            running = False
+        # Check the selected color
+        if 'j' in keys:
+            end = time.time()
+            selectedColor = "red"
+        elif 'k' in keys:
+            end = time.time()
+            selectedColor = "blue"
+        elif 'l' in keys:
+            end = time.time()
+            selectedColor = "green"
+        else:
+            end = time.time()
+            selectedColor = "NA"
+
+                # Check if the selected color is correct    
+        if(selectedColor == color):
+            correct = True
+        else:
+            correct = False
+        output.write(f"{word}, {color}, {selectedColor}, {end - start}, {correct}, {trigger}\n")
+        if(trigger):
+            triggerOutlet.push_sample([2])
+        else:
+            triggerOutlet.push_sample([1])
+        newWord = True
+        window.color = [-1, -1, -1]
+        window.flip() 
 
     if time.time() - start > 2:
         output.write(f"{word}, {color}, NA, NA, NA, NA\n")
         newWord = True
-        screen.fill("black")
-
-    pygame.display.flip()
-    clock.tick(60)
+        window.color = [-1, -1, -1]
+        window.flip()
 
 output.close()
-pygame.quit()
+core.quit()

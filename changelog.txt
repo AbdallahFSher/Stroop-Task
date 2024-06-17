@@ -7,3 +7,7 @@ v1.05 (June 12, 2024)
         - Occasionally, the screen will stay black even though a word is selected, and a new word doesn't appear until about 2.5 seconds afterwards
             (total length of stimulus + inter-stimulus interval). This could be a rendering issue due to messy code; Need to fix in the next couple
             of days.
+
+v1.1 (June 17, 2024)
+    - Switched pygame to psychopy; this fixed the timing issues I was having beforehand
+    - Added LSL Support; sends 1 for a normal word; 2 for a trigger word

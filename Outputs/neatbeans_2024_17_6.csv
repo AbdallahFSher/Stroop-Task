@@ -1,0 +1,13 @@
+Word, Color, Selected Color, Time, Correct?, Trigger?
+TUMOR, blue, NA, 2.110496997833252, False, False
+GERUCH, red, red, 2.0146541595458984, True, False
+UNMENSCH, blue, blue, 2.010429859161377, True, False
+ZUHAUSE, green, green, 2.010655641555786, True, False
+SCHERE, blue, blue, 2.00810170173645, True, False
+ATOMBOMBE, red, red, 2.0094666481018066, True, False
+MORD, blue, blue, 2.0075883865356445, True, False
+GLÜCK, green, green, 2.014512062072754, True, False
+TOTE, green, green, 2.0070064067840576, True, False
+ABLAUF, red, red, 2.0104727745056152, True, False
+UNTREUE, green, green, 2.00758957862854, True, False
+ZUHAUSE, green, NA, 2.008505344390869, False, False

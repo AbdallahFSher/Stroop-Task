@@ -1,4 +1,7 @@
-pygame
+psychopy
+pylsl
+screeninfo
+numpy
 pandas
 random
 time

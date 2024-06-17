@@ -1,2 +1,3 @@
 - Add training section (According to paper)
 - Might be able to synchronize EEG Recording software with the test using this script; will look into stroop test + EEG first and then decide
+    o Did it with LSL
