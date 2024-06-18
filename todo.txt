@@ -1,3 +1,10 @@
-- Add training section (According to paper)
-- Might be able to synchronize EEG Recording software with the test using this script; will look into stroop test + EEG first and then decide
+o Add training section (According to paper)
+o Might be able to synchronize EEG Recording software with the test using this script; will look into stroop test + EEG first and then decide
     o Did it with LSL
+
+# OTHER TODO:
+# o.) Send information about pos/neg/neutral words through LSL
+# 2.) Ask Claudia if we are meeting on friday/schedule meeting with her to talk about paradigm for c-fiber
+# 3.) Email Dr. P if she has time next week to meet about c-fiber project; Try to record something this week
+# 4.) If there's too much noise in the data at the clinic, ask if we can bring the equipment to the shielded room
+# 5.) Ask Michael if we can use his digitimer and NI box

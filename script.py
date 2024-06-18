@@ -1,7 +1,7 @@
 # Emotional Stroop Test for Migraineurs
 # Author: Abdallah Sher
 # Last Updated: June 17, 2024
-# Version 1.1
+# Version 1.2
 # Sources:
 # 1.) https://www.scenegrammarlab.com/databases/bawl-r-database/
 # 2.) https://doi.org/10.1186/1471-2377-11-141
@@ -18,12 +18,13 @@ import win32gui
 import tkinter as tk
 from tkinter import ttk
 
+#Important globals
 running = False
 migraineBool = False
 kb = keyboard.Keyboard()
 
 # Create a LSL stream for the trigger words
-triggerInfo = StreamInfo(name='TriggerStream', type='Markers', channel_count=1, source_id='Emotional_Stroop_Marker_Stream')
+triggerInfo = StreamInfo(name='TriggerStream', type='Markers', channel_count=1, channel_format='int32', source_id='Emotional_Stroop_Marker_Stream') # type: ignore
 triggerOutlet = StreamOutlet(triggerInfo)
 
 # Function to bring the window to the front
@@ -97,18 +98,13 @@ startButton.bind("<Button-1>", lambda event: beginTest(event))
 
 inputWindow.mainloop()
 
-# xDim = 640
-# yDim = 480
-# centerX = xDim/2
-# centerY = yDim/2
-
 # Define variables
 newWord = True
 subjectStr = subjectTk.get()
 output = open(f"Outputs/{subjectStr}_{time.localtime().tm_year}_{time.localtime().tm_mday}_{time.localtime().tm_mon}.csv", "w")
-output.write("Word, Color, Selected Color, Time, Correct?, Trigger?\n")
 count = 0
 trigger = False
+triggerChance = 50 # Chance of trigger word; maybe this should be adjusted based on the number of trigger words
 
 # 1.) Import the BAWL-R into python
 bawlr = pd.read_excel('BAWL-R.xlsx')
@@ -118,24 +114,35 @@ neuWords = bawlr.query('EMO_MEAN == 0', inplace=False).reset_index(drop=True)
 
 
 if(running):
+    training = True
     triggerWords = triggerWordsTK.get()
     triggerWords = triggerWords.split(",")
     triggerWords = [word.strip() for word in triggerWords]
     triggerWords = [word.upper() for word in triggerWords]
-    # 2.) Create a pygame window for the task
+    output.write("Trigger Words Used:,")
+    for word in triggerWords:
+        output.write(f"{word},")
+    output.write("\n")
+    output.write("Word, Color, Selected Color, Time, Correct?, Trigger?, Word Type\n")
+    # 2.) Create a window for the task
     SCREEN_WIDTH = screeninfo.get_monitors()[0].width
     SCREEN_HEIGHT = screeninfo.get_monitors()[0].height
     window = visual.Window(size=(SCREEN_WIDTH, SCREEN_HEIGHT), fullscr=True, allowGUI=False, allowStencil=False, monitor='display1', color=[-1,-1,-1], colorSpace='rgb', blendMode='avg', useFBO=False, waitBlanking = True, units="pix")
     bringToFront("Emotional Stroop Test")
+    visual.TextStim(window, text="40 Training Trials", color="white", height=50).draw()
+    window.flip()
+    time.sleep(2)
+
+
 
 # Main Loop
 while running:
+    # Setting the new word
     if(newWord):
-        time.sleep(0.5)
-        wordType = random.randint(0, 2)
-        if(wordType == 0):
+        time.sleep(0.5) # Interstimulus interval
+        wordType = random.choice(["positive", "neutral", "negative"])
+        if(wordType == "negative"):
             # Negative Word
-            triggerChance = 50
             wordInd = random.randint(0, negWords.shape[0] - 1)
             if(migraineBool and random.randint(0, 100) < triggerChance):
                 word = random.choice(triggerWords)
@@ -143,11 +150,11 @@ while running:
             else:
                 word = negWords.iloc[wordInd]['WORD']
                 trigger = False
-        elif(wordType == 1):
+        elif(wordType == "neutral"):
             # Neutral Word
             wordInd = random.randint(0, neuWords.shape[0] - 1)
             word = neuWords.iloc[wordInd]['WORD']
-        elif(wordType == 2):
+        elif(wordType == "positive"):
             # Positive Word
             wordInd = random.randint(0, posWords.shape[0] - 1)
             word = posWords.iloc[wordInd]['WORD']
@@ -156,7 +163,7 @@ while running:
         start = time.time()
         count += 1
 
-    if(count == 108):
+    if(count == 148):
         running = False
         break
 
@@ -164,9 +171,10 @@ while running:
     text.draw()
     window.flip()
 
+    # Get user input this loop
     keys = event.getKeys()
     
-    #if keys is not empty
+    # If keys is not empty (User pressed something)
     if keys:
         # Event handling
         if 'escape' in keys:
@@ -190,20 +198,43 @@ while running:
             correct = True
         else:
             correct = False
-        output.write(f"{word}, {color}, {selectedColor}, {end - start}, {correct}, {trigger}\n")
+        if not training:
+            output.write(f"{word}, {color}, {selectedColor}, {end - start}, {correct}, {trigger}, {wordType}\n")
+        # 0: Trigger
+        # 1: Negative
+        # 2: Neutral
+        # 3: Positive
         if(trigger):
-            triggerOutlet.push_sample([2])
-        else:
+            triggerOutlet.push_sample([0])
+        elif wordType == "negative":
             triggerOutlet.push_sample([1])
+        elif wordType == "neutral":
+            triggerOutlet.push_sample([2])
+        elif wordType == "positive":
+            triggerOutlet.push_sample([3])
         newWord = True
         window.color = [-1, -1, -1]
         window.flip() 
 
+    # If the user does not respond in 2 seconds, move to the next word
     if time.time() - start > 2:
-        output.write(f"{word}, {color}, NA, NA, NA, NA\n")
+        if not training:
+            output.write(f"{word}, {color}, NA, NA, NA, NA\n")
         newWord = True
         window.color = [-1, -1, -1]
         window.flip()
+
+    if count == 40:
+        training = False
+        newWord = True
+        window.color = [-1, -1, -1]
+        dialogue = visual.TextStim(window, text="Training Complete! Beginning in...", color="white", height=50)
+        dialogue.draw()
+        for i in range(10, 0, -1):
+            dialogue.draw()
+            visual.TextStim(window, text=str(i), color="white", height=100, pos=(dialogue.pos[0],dialogue.pos[1]-100)).draw()
+            window.flip()
+            time.sleep(1)
 
 output.close()
 core.quit()

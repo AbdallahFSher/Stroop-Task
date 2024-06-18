@@ -11,3 +11,8 @@ v1.05 (June 12, 2024)
 v1.1 (June 17, 2024)
     - Switched pygame to psychopy; this fixed the timing issues I was having beforehand
     - Added LSL Support; sends 1 for a normal word; 2 for a trigger word
+
+v1.2 (June 18, 2024)
+    - Added training section
+    - Updated LSL Output to reflect type of word
+    - Added trigger words and word types to output csv file
