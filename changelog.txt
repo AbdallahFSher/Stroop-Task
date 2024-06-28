@@ -16,3 +16,7 @@ v1.2 (June 18, 2024)
     - Added training section
     - Updated LSL Output to reflect type of word
     - Added trigger words and word types to output csv file
+
+v1.3 (June 28, 2024)
+    - Fixed keyboard accepting input for the next word before it appears
+    - Translated instructions to german

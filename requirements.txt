@@ -7,3 +7,4 @@ random
 time
 pywin32
 tkinter
+pyinstaller

@@ -1,3 +1,5 @@
-./Outputs/*
-./build/*
-./dist/*
+Outputs/*
+build/*
+dist/*
+todo.txt
+*.spec

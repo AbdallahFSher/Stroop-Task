@@ -1,7 +1,7 @@
 # Emotional Stroop Test for Migraineurs
 # Author: Abdallah Sher
 # Last Updated: June 17, 2024
-# Version 1.2
+# Version 1.3
 # Sources:
 # 1.) https://www.scenegrammarlab.com/databases/bawl-r-database/
 # 2.) https://doi.org/10.1186/1471-2377-11-141
@@ -21,7 +21,7 @@ from tkinter import ttk
 #Important globals
 running = False
 migraineBool = False
-kb = keyboard.Keyboard()
+kb = keyboard.Keyboard(waitForStart=True)
 
 # Create a LSL stream for the trigger words
 triggerInfo = StreamInfo(name='TriggerStream', type='Markers', channel_count=1, channel_format='int32', source_id='Emotional_Stroop_Marker_Stream') # type: ignore
@@ -90,7 +90,7 @@ migraine.current()
 triggerWordsLabel = ttk.Label(frm, text="Enter Trigger Words\n(separated by ',') :")
 triggerWordsTK = tk.StringVar()
 triggerWordsEntry = ttk.Entry(frm, textvariable=triggerWordsTK)
-migraineVar.trace_add("write", showTriggerEntry)
+migraineVar.trace_add("write", showTriggerEntry) # Creates Trace to dynamically show the trigger words entry box
 
 startButton = ttk.Button(frm, text="Start Test")
 startButton.grid(column=1, row=3, padx=10, pady=10)
@@ -129,7 +129,7 @@ if(running):
     SCREEN_HEIGHT = screeninfo.get_monitors()[0].height
     window = visual.Window(size=(SCREEN_WIDTH, SCREEN_HEIGHT), fullscr=True, allowGUI=False, allowStencil=False, monitor='display1', color=[-1,-1,-1], colorSpace='rgb', blendMode='avg', useFBO=False, waitBlanking = True, units="pix")
     bringToFront("Emotional Stroop Test")
-    visual.TextStim(window, text="40 Training Trials", color="white", height=50).draw()
+    visual.TextStim(window, text="40 Trainingsversuche", color="white", height=50).draw()
     window.flip()
     time.sleep(2)
 
@@ -160,41 +160,34 @@ while running:
             word = posWords.iloc[wordInd]['WORD']
         newWord = False
         color = random.choice(["red", "blue", "green"])
+        text = visual.TextStim(window, text=word, color=color, height=100)
+        text.draw()
+        window.flip()
         start = time.time()
+        kb.start()
         count += 1
 
     if(count == 148):
         running = False
         break
 
-    text = visual.TextStim(window, text=word, color=color, height=100)
-    text.draw()
-    window.flip()
-
     # Get user input this loop
-    keys = event.getKeys()
-    
-    # If keys is not empty (User pressed something)
+    keys = event.waitKeys(maxWait=2, keyList=['j', 'k', 'l', 'escape'])
+    kb.stop()
+    # Event handling
     if keys:
-        # Event handling
-        if 'escape' in keys:
+        if keys[0] == 'escape':
             running = False
         # Check the selected color
-        if 'j' in keys:
-            end = time.time()
+        if keys[0] == 'j':
             selectedColor = "red"
-        elif 'k' in keys:
-            end = time.time()
+        elif keys[0] == 'k':
             selectedColor = "blue"
-        elif 'l' in keys:
-            end = time.time()
+        elif keys[0] == 'l':
             selectedColor = "green"
-        else:
-            end = time.time()
-            selectedColor = "NA"
-
-                # Check if the selected color is correct    
-        if(selectedColor == color):
+        end = time.time()
+        # Check if the selected color is correct    
+        if(selectedColor and selectedColor == color):
             correct = True
         else:
             correct = False
@@ -214,21 +207,24 @@ while running:
             triggerOutlet.push_sample([3])
         newWord = True
         window.color = [-1, -1, -1]
-        window.flip() 
-
-    # If the user does not respond in 2 seconds, move to the next word
-    if time.time() - start > 2:
+        window.flip()
+        keys = None
+        kb.clearEvents()
+    else:
+        end = time.time()
         if not training:
             output.write(f"{word}, {color}, NA, NA, NA, NA\n")
         newWord = True
         window.color = [-1, -1, -1]
         window.flip()
+        selectedColor = "NA"
+
 
     if count == 40:
         training = False
         newWord = True
         window.color = [-1, -1, -1]
-        dialogue = visual.TextStim(window, text="Training Complete! Beginning in...", color="white", height=50)
+        dialogue = visual.TextStim(window, text="Das Training ist komplett! Mach dich bereit...", color="white", height=50)
         dialogue.draw()
         for i in range(10, 0, -1):
             dialogue.draw()
